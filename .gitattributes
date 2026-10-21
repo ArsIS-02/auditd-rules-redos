@@ -1,0 +1,5 @@
+# Правила auditd и скрипты должны иметь Unix-переводы строк (LF) даже при
+# клонировании в Windows с core.autocrlf=true: CRLF ломает загрузку правил.
+* text=auto eol=lf
+*.rules text eol=lf
+*.sh    text eol=lf
