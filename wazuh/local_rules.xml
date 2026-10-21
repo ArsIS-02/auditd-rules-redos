@@ -1,0 +1,129 @@
+<!--
+  Правила Wazuh для свода auditd-rules-redos.
+  Куда: /var/ossec/etc/rules/local_rules.xml на сервере Wazuh (manager),
+        затем: systemctl restart wazuh-manager
+
+  Родительское правило 80700 из штатного 0365-auditd_rules.xml ловит все
+  события auditd; ниже — разбор по полю audit.key, которое ставят наши правила.
+  Диапазон идентификаторов 100100-100115 свободен для пользовательских правил,
+  при конфликте с вашими правилами поменяйте его.
+-->
+<group name="audit,auditd_redos,">
+
+  <!-- Критичные: подсистема аудита, учётные записи, модули ядра -->
+  <rule id="100100" level="12">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^auditconfig$|^audispconfig$|^auditlog$|^audit_tools$</field>
+    <description>auditd: вмешательство в подсистему аудита ($(audit.key)) — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_tampering,</group>
+  </rule>
+
+  <rule id="100101" level="12">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^identity_modification$</field>
+    <description>auditd: изменение файлов учётных записей — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_identity,</group>
+  </rule>
+
+  <rule id="100102" level="12">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^kernel_modules$|^kernel_modules_config$</field>
+    <description>auditd: загрузка/выгрузка модуля ядра или изменение modprobe.d — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_kernel,</group>
+  </rule>
+
+  <!-- Высокие: привилегии, пользователи, закрепление, сетевые утилиты -->
+  <rule id="100103" level="6">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^privilege_escalation$</field>
+    <description>auditd: запуск sudo/su — auid=$(audit.auid)</description>
+    <group>audit_privilege,</group>
+  </rule>
+
+  <rule id="100104" level="10">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^user_management$</field>
+    <description>auditd: управление пользователями — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_user,</group>
+  </rule>
+
+  <rule id="100105" level="10">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^cron_persistence$|^systemd_persistence$</field>
+    <description>auditd: изменение cron/systemd (возможное закрепление) — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_persistence,</group>
+  </rule>
+
+  <rule id="100106" level="10">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^suspicious_network_tool$</field>
+    <description>auditd: запуск сетевой утилиты разведки — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_suspicious,</group>
+  </rule>
+
+  <rule id="100107" level="7">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^suspicious_download$</field>
+    <description>auditd: запуск wget/curl — auid=$(audit.auid)</description>
+    <group>audit_suspicious,</group>
+  </rule>
+
+  <rule id="100108" level="8">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^unauthorized_access_attempt$</field>
+    <description>auditd: отказ в доступе к /etc или /root — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_access,</group>
+  </rule>
+
+  <rule id="100109" level="8">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^network_config$</field>
+    <description>auditd: изменение сетевой конфигурации — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_network,</group>
+  </rule>
+
+  <!-- Информационные: действия пользователей -->
+  <rule id="100110" level="3">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^network_socket_created$</field>
+    <description>auditd: сокет создан в пользовательской сессии — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_network,</group>
+  </rule>
+
+  <rule id="100111" level="5">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^perm_modification$</field>
+    <description>auditd: изменение прав/владельца — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_permissions,</group>
+  </rule>
+
+  <rule id="100112" level="3">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^file_deletion$</field>
+    <description>auditd: удаление/переименование файла — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_files,</group>
+  </rule>
+
+  <rule id="100113" level="3">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^file_creation$</field>
+    <description>auditd: создание каталога/ссылки — $(audit.exe), auid=$(audit.auid)</description>
+    <group>audit_files,</group>
+  </rule>
+
+  <rule id="100114" level="5">
+    <if_sid>80700</if_sid>
+    <field name="audit.key">^power_management$</field>
+    <description>auditd: shutdown/reboot/poweroff — auid=$(audit.auid)</description>
+    <group>audit_power,</group>
+  </rule>
+
+  <!-- Корреляция: серия отказов доступа от одного пользователя -->
+  <rule id="100115" level="12" frequency="10" timeframe="120">
+    <if_matched_sid>100108</if_matched_sid>
+    <same_field>audit.auid</same_field>
+    <description>auditd: 10+ отказов доступа к /etc или /root за 2 минуты от auid=$(audit.auid) — возможная разведка</description>
+    <group>audit_access,attack,</group>
+  </rule>
+
+</group>
