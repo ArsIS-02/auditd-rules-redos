@@ -13,7 +13,7 @@
 | | aarch64 | x86_64 |
 |---|---|---|
 | Файл | [`rules/99-custom-aarch64.rules`](rules/99-custom-aarch64.rules) | [`rules/99-custom-x86_64.rules`](rules/99-custom-x86_64.rules) |
-| Правил в `auditctl -l` | 55 | 60 (58 без SELinux) |
+| Правил в `auditctl -l` | 56 | 61 (59 без SELinux) |
 | Syscall | только `*at` (`fchmodat`, `openat`, `unlinkat`...) | старые и `*at` |
 | 32-битные приложения (`arch=b32`) | нет | да |
 | Исключения по SELinux (`subj_type`) | нет | да, убираются автоматически при `SELinux Disabled` |
@@ -107,7 +107,7 @@ sudo auditctl -l | wc -l
 | `user_management` | `useradd`, `usermod`, `passwd` и др. | высокая |
 | `cron_persistence`, `systemd_persistence` | изменения cron и unit-файлов systemd | высокая |
 | `suspicious_network_tool`, `suspicious_download` | `nmap`, `tcpdump`, `nc`, `wget`, `curl` | высокая |
-| `unauthorized_access_attempt` | неудачные `open/openat` в `/etc` и `/root` | высокая |
+| `unauthorized_access_attempt` | неудачные `open/openat` в `/etc` и `/root`, кроме обращения крона GLPI к `/etc/krb5.keytab` | высокая |
 | `network_config` | `/etc/hosts`, NetworkManager, `sysconfig/network` | средняя |
 | `network_socket_created` | создание сокетов IPv4/IPv6 в пользовательских сессиях | средняя |
 | `perm_modification` | `chmod`/`chown` в пользовательских сессиях | средняя |

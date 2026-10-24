@@ -68,7 +68,7 @@ echo "1. aarch64: чистая установка"
 setup
 AUDIT_ARCH=aarch64 bash "$REPO/deploy/deploy.sh" > "$T/out" 2>&1; rc=$?
 check "код возврата 0" test $rc -eq 0
-check "в ядре 55 правил" test "$(kernel_count)" -eq 55
+check "в ядре 56 правил" test "$(kernel_count)" -eq 56
 check "старый файл убран из rules.d" test ! -e "$T/etc/rules.d/audit.rules"
 check "старый файл есть в бэкапе" test -n "$(find "$T/backup" -name audit.rules -path '*rules.d*')"
 rm -rf "$T"
@@ -77,14 +77,14 @@ echo "2. x86_64, SELinux Enforcing"
 setup
 STUB_SELINUX=Enforcing AUDIT_ARCH=x86_64 bash "$REPO/deploy/deploy.sh" > "$T/out" 2>&1; rc=$?
 check "код возврата 0" test $rc -eq 0
-check "в ядре 60 правил" test "$(kernel_count)" -eq 60
+check "в ядре 61 правило" test "$(kernel_count)" -eq 61
 rm -rf "$T"
 
 echo "3. x86_64, SELinux Disabled — subj_type вырезаются"
 setup
 STUB_SELINUX=Disabled AUDIT_ARCH=x86_64 bash "$REPO/deploy/deploy.sh" > "$T/out" 2>&1; rc=$?
 check "код возврата 0" test $rc -eq 0
-check "в ядре 58 правил" test "$(kernel_count)" -eq 58
+check "в ядре 59 правил" test "$(kernel_count)" -eq 59
 check "subj_type не установлен" bash -c "! grep -q subj_type '$T/etc/rules.d/99-custom-x86_64.rules'"
 check "исходник в репозитории не изменён" grep -q subj_type "$REPO/rules/99-custom-x86_64.rules"
 rm -rf "$T"
