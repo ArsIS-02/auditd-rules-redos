@@ -3,9 +3,9 @@
 #  Оптимизирован для отправки в SIEM (Graylog / Wazuh): максимум сигнала,
 #  минимум фонового шума.
 #
-#  Версия набора: 1.5
+#  Версия набора: 1.6
 #  Статус: проверен на 4 хостах РЕД ОС aarch64 (audit 3.1.3, SELinux Disabled),
-#          auditctl -l показывает 55 правил.
+#          auditctl -l показывает 56 правил.
 #
 #  Особенности aarch64:
 #   * в ядре нет «старых» syscall (chmod, chown, open, rename, unlink, mkdir,
@@ -111,7 +111,14 @@
 # Ключ исторически называется file_deletion, но включает и переименование
 -a always,exit -F arch=b64 -S unlinkat,renameat,renameat2 -F auid>=1000 -F auid!=-1 -F key=file_deletion
 -a always,exit -F arch=b64 -S mkdirat,linkat,symlinkat -F auid>=1000 -F auid!=-1 -F key=file_creation
-# Неудачные попытки открыть файлы в /etc и /root — признак разведки
+# Неудачные попытки открыть файлы в /etc и /root — признак разведки.
+# Перед ними — исключение для известного безвредного случая: крон GLPI
+# (/usr/bin/php от пользователя apache) на каждом запуске пробует прочитать
+# /etc/krb5.keytab и получает отказ. Это даёт около 940 записей в сутки и
+# заглушает настоящие попытки. Правило never обязано стоять ВЫШЕ общего:
+# ядро применяет первое совпавшее правило. Исключение сужено до одного файла
+# и одной программы, любое другое обращение по-прежнему записывается.
+-a never,exit -F arch=b64 -S openat -F path=/etc/krb5.keytab -F exe=/usr/bin/php -F success=0
 -a always,exit -F arch=b64 -S openat -F dir=/etc -F success=0 -F key=unauthorized_access_attempt
 -a always,exit -F arch=b64 -S openat -F dir=/root -F success=0 -F key=unauthorized_access_attempt
 
