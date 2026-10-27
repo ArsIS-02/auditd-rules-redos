@@ -154,4 +154,4 @@ bash tests/run-tests.sh
 
 ## Лицензия
 
-[MIT](LICENSE) © ArsIS-02
+[GPL-3.0](LICENSE) © ArsIS-02
