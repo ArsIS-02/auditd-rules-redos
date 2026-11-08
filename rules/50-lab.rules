@@ -1,0 +1,12 @@
+# Лабораторные детекты (Kimi, 08.11.2026)
+# Запуск исполняемых файлов из временных каталогов (классика дропперов)
+-a always,exit -F arch=b64 -S execve -F dir=/tmp -F key=tmp_exec
+-a always,exit -F arch=b64 -S execve -F dir=/dev/shm -F key=tmp_exec
+-a always,exit -F arch=b64 -S execve -F dir=/var/tmp -F key=tmp_exec
+# Изменение расписаний cron (persistence)
+-w /etc/cron.d -p wa -k cron_mod
+-w /etc/crontab -p wa -k cron_mod
+-w /var/spool/cron -p wa -k cron_mod
+# Изменение systemd-юнитов (persistence)
+-w /etc/systemd/system -p wa -k systemd_unit
+-w /home/redos/.config/systemd/user -p wa -k systemd_unit

@@ -132,6 +132,35 @@ sudo aureport -k --summary -ts this-hour
 - **Graylog** — [`graylog/pipeline-rules.md`](graylog/pipeline-rules.md): поля
   `audit_key`, `audit_type`, `audit_auid`, `audit_exe`.
 
+## Лабораторное дополнение: `rules/50-lab.rules`
+
+Отдельный маленький набор для домашней лаборатории — детекты закрепления,
+которых нет в основном своде. Ставится поверх: файл копируется в
+`/etc/audit/rules.d/50-lab.rules`, затем `sudo augenrules --load`.
+
+| Ключ | Что ловит |
+|---|---|
+| `tmp_exec` | запуск исполняемых файлов из `/tmp`, `/dev/shm`, `/var/tmp` (классика дропперов) |
+| `cron_mod` | изменение `/etc/cron.d`, `/etc/crontab`, `/var/spool/cron` (persistence) |
+| `systemd_unit` | изменение `/etc/systemd/system` и пользовательских юнитов `~/.config/systemd/user` |
+
+События прилетают в Graylog через Wazuh-агент (поток «RedOS auditd Logs»).
+Детекты-алерты на этом потоке (уведомление «Mail.ru Alert Linux»):
+
+| Правило | Приоритет | Запрос |
+|---|---|---|
+| AUDIT - Запуск программы из временного каталога | высокий | `audit AND EXECVE AND ("/tmp/" OR "/dev/shm/" OR "/var/tmp/")` |
+| AUDIT - Изменение файлов учётных записей | высокий | `audit AND PATH AND ("/etc/passwd" OR "/etc/shadow" OR "/etc/group" OR "/etc/gshadow")` |
+| AUDIT - Работа с модулями ядра | высокий | `audit AND (insmod OR modprobe OR rmmod)` |
+| AUDIT - Изменение расписаний cron | средний | `audit AND PATH AND cron` |
+| AUDIT - Изменение systemd-юнитов | средний | `audit AND PATH AND ("/etc/systemd/system" OR "config/systemd")` |
+| AUDIT - Base64-декодирование в командной строке | средний | `audit AND EXECVE AND base64 AND ("-d" OR "--decode")` |
+
+Грабля: запрос по systemd без уточнения пути (`... AND systemd`) зашумляется
+фоном GNOME-сессии (`/run/user/1000/systemd/...`) — обязательно ограничивать
+путь, как в таблице. Проверено боем 08.11.2026: все шесть правил срабатывают
+на ручных триггерах, фоновых срабатываний нет.
+
 ## Требования
 
 - РЕД ОС с пакетом `audit` (проверено на audit 3.1.3);
