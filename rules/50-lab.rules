@@ -10,3 +10,9 @@
 # Изменение systemd-юнитов (persistence)
 -w /etc/systemd/system -p wa -k systemd_unit
 -w /home/redos/.config/systemd/user -p wa -k systemd_unit
+# Honeytoken-файлы (приманки): любое открытие на чтение — событие в Graylog
+# (правило «CANARY - Открытие honeytoken-файла»). Файлы-приманки:
+# ~/passwords.xlsx и /etc/backup_credentials.txt с фейковыми кредами.
+-w /etc/backup_credentials.txt -p r -k honeytoken
+-w /home/redos/passwords.xlsx -p r -k honeytoken
+# На Raspberry Pi (пользователь user): -w /home/user/passwords.xlsx -p r -k honeytoken

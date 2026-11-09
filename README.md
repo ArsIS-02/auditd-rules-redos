@@ -143,6 +143,7 @@ sudo aureport -k --summary -ts this-hour
 | `tmp_exec` | запуск исполняемых файлов из `/tmp`, `/dev/shm`, `/var/tmp` (классика дропперов) |
 | `cron_mod` | изменение `/etc/cron.d`, `/etc/crontab`, `/var/spool/cron` (persistence) |
 | `systemd_unit` | изменение `/etc/systemd/system` и пользовательских юнитов `~/.config/systemd/user` |
+| `honeytoken` | открытие на чтение файлов-приманок `/etc/backup_credentials.txt` и `~/passwords.xlsx` (фейковые креды; любое чтение = компрометация хоста) |
 
 События прилетают в Graylog через Wazuh-агент (поток «RedOS auditd Logs»).
 Детекты-алерты на этом потоке (уведомление «Mail.ru Alert Linux»):
@@ -155,11 +156,12 @@ sudo aureport -k --summary -ts this-hour
 | AUDIT - Изменение расписаний cron | средний | `audit AND PATH AND cron` |
 | AUDIT - Изменение systemd-юнитов | средний | `audit AND PATH AND ("/etc/systemd/system" OR "config/systemd")` |
 | AUDIT - Base64-декодирование в командной строке | средний | `audit AND EXECVE AND base64 AND ("-d" OR "--decode")` |
+| CANARY - Открытие honeytoken-файла | высокий | `audit AND honeytoken` (агрегация count ≥ 1, группировка по хосту; уведомления: почта + тикет GLPI через TicketBridge) |
 
 Грабля: запрос по systemd без уточнения пути (`... AND systemd`) зашумляется
 фоном GNOME-сессии (`/run/user/1000/systemd/...`) — обязательно ограничивать
-путь, как в таблице. Проверено боем 08.11.2026: все шесть правил срабатывают
-на ручных триггерах, фоновых срабатываний нет.
+путь, как в таблице. Проверено боем 08–09.11.2026: все семь правил срабатывают
+на ручных триггерах (honeytoken — тикеты GLPI №18–19), фоновых срабатываний нет.
 
 ## Требования
 
